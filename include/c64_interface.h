@@ -3,7 +3,7 @@
 
 #include "board.h"
 
-void c64_hold_reset(int ms=250);
+void c64_hold_reset(void);
 void c64_release_reset(void);
 void c64_reset(void);
 

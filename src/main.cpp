@@ -94,6 +94,7 @@ void run_shell(void) {
                token = strtok(NULL, " ");
                if (strcmp(token, "c64") == 0) {
                   printf("C64 reset\n");
+                  c64_set_exrom_game(1, 1);
                   c64_reset();
                } else if (strcmp(token, "pico") == 0) {
                   printf("PICO reset\n");
