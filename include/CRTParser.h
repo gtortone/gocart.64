@@ -230,11 +230,15 @@ private:
          }
       }
 
-      //printf("bank %d, load_addr: 0x%X, ofs: %u, crt_map[%d]: %d\n",
+      //printf("bank %d, load_addr: 0x%X, ofs: %lu, crt_map[%d]: %d\n",
       //      number, startAddr, ofs, number, crt_map[number]);
       
       if (!reader.read(crt_buf+ofs, blockLen)) 
          return false;
+
+      // mirror 4K image
+      if (blockLen <= 4*1024)
+         memcpy(crt_buf+ofs+(4*1024), crt_buf+ofs, 4*1024);
 
       ChipBlock chip;
       chip.type = chipType;
