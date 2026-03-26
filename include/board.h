@@ -8,18 +8,19 @@
 #define PINROMADDR    0
 #define ADDRWIDTH    16
 
-// DATA GPIO pins       :     GP16 - GP23
-#define PINROMDATA   16
+// CONTROL pins
+#define RW           16
+#define ROML         17
+#define ROMH         18
+#define IO1          19
+#define IO2          20
+#define PHI2         21
+#define BA           22
+
+// DATA GPIO pins       :     GP23 - GP30
+#define PINROMDATA   23 
 #define DATAWIDTH     8
 
-// CONTROL pins
-#define IO1          24
-#define IO2          25
-#define PHI2         26
-#define ROML         27
-#define ROMH         28
-#define BA           29
-#define RW           30
 #define GAME         31    // inverted logic
 #define EXROM        32    // inverted logic
 #define RESET        33    // inverted logic
