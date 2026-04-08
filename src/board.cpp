@@ -89,15 +89,21 @@ void board_setup(void) {
    gpio_init(RESET);
    gpio_set_dir(RESET, GPIO_OUT);
 
+   //gpio_init(DMA);
+   //gpio_disable_pulls(DMA);
+   //gpio_set_dir(DMA, GPIO_IN);
+
    gpio_init_mask(ADDR_GPIO_MASK | DATA_GPIO_MASK);
    gpio_set_dir_in_masked(ADDR_GPIO_MASK | DATA_GPIO_MASK);
 
-   for(int i=PINROMADDR; i<ADDRWIDTH; i++)
-      gpio_disable_pulls(i);
+   for(int i=PINROMADDR; i<ADDRWIDTH; i++) {
+      gpio_disable_pulls(PINROMADDR+i);
+      //gpio_set_slew_rate(PINROMADDR+i, GPIO_SLEW_RATE_FAST);
+   }
 
    for(int i=PINROMDATA; i<DATAWIDTH; i++) {
       gpio_disable_pulls(PINROMDATA+i);
-      gpio_set_slew_rate(PINROMDATA+i, GPIO_SLEW_RATE_FAST);
+      //gpio_set_slew_rate(PINROMDATA+i, GPIO_SLEW_RATE_FAST);
    }
 
    // set DATA lines (D0...D7) as input

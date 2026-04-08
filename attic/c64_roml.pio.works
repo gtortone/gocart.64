@@ -1,0 +1,56 @@
+.program c64_roml
+
+mov pindirs, null
+
+.wrap_target
+
+;wait 1 pin 16        ; wait RW high
+;wait 0 pin 17        ; wait ROM low
+
+wait irq 0
+
+in pins, 16          ; read A0..A15
+
+push block           ; send address to CPU
+pull block           ; wait data from CPU
+
+mov pindirs, ~null
+out pins, 8
+
+wait 1 pin 17        ; wait ROML high
+wait 1 pin 18        ; wait ROMH high
+mov pindirs, null
+
+irq clear 0          ; clear irq
+
+.wrap
+
+;
+;
+;
+
+.program trigger
+
+mov pindirs, null
+
+.wrap_target
+
+loop: 
+   mov isr, null
+   in pins, 2        ; read ROML, ROMH
+   mov x, ~isr       ; X is complement of ISR (11 = no ROML/ROMH selection)
+
+   mov osr, x        ; OSR = X
+   out pins, 30      ; shift 30 bits (we need bit1, bit0)
+   mov y, osr        ; copy (bit1, bit0) to Y
+
+   jmp !y loop 
+
+   irq 0
+   irq wait 0
+
+.wrap
+
+;
+;
+;

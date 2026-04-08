@@ -1,0 +1,9 @@
+.program c64_roml
+
+.wrap_target
+
+pull block           ; receive data from CPU
+mov isr, osr
+push block           ; send data to CPU
+
+.wrap

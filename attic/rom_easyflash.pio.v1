@@ -1,0 +1,79 @@
+.program rom_easyflash
+
+.wrap_target
+
+start:
+   in pins, 21          ; read IO2, IO1, ROMH, ROML, RW, A15...A0
+
+   mov osr, ~isr
+   out null, 17         ; skip 17 LSB bits - RW, A15...A0
+
+   jmp pin do_read      ; if RW==1 go read loop
+   jmp do_write
+
+do_read:
+   mov y, null
+   out y, 2             ; Y = ~ROMH, ~ROML
+   jmp !y rd_continue   ; check ~ROMH, ~ROML
+   jmp fetch
+
+rd_continue:
+   out null, 1          ; skip IO1
+   out x, 1
+   jmp !x start         ; check ~IO2
+
+fetch:
+   push                 ; send address to CPU
+   pull block           ; wait data from CPU
+
+   out pins, 8
+   mov pindirs, ~null [31]  ; set pins as output
+   mov pindirs, null    ; set pins as input
+   jmp start
+
+do_write:
+   mov x, null
+   mov y, null
+   out null, 2          ; skip ROMH, ROML
+   out x, 1             ; X = ~IO1
+   out y, 1             ; Y = ~IO2
+
+   jmp !x wr_continue
+   irq set 0
+   wait irq 7
+   ;wait 1 pin 19        ; wait IO1 high
+   
+wr_continue:
+   jmp !y start
+   irq set 1
+   wait irq 7
+   ;wait 1 pin 20        ; wait IO2 high
+
+.wrap
+
+;
+;
+;
+
+.program rom_easyflash_bs           ; IO1 / IRQ 0
+.wrap_target
+   wait irq 0
+   in pins, 31 
+   push        ; block
+   irq clear 0
+   irq set 7
+.wrap
+
+;
+;
+;
+
+.program rom_easyflash_write_ram    ; IO2 / IRQ 1
+.wrap_target
+   wait irq 1
+   in pins, 31 
+   push        ; block
+   irq clear 1
+   irq set 7
+.wrap
+

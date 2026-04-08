@@ -105,7 +105,8 @@ void run_shell(void) {
             } else if (strcmp(token, "load") == 0) {
                // load file
                // parameter: <filename>
-               token = strtok(NULL, " ");
+               token = strtok(NULL, "");
+               trim(token);
                if(strlen(path) == 1)
                   sprintf(prev_path, "%s%s", path, token);
                else

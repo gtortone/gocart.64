@@ -1,20 +1,22 @@
 #include <stdio.h>      // printf
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
+#include "hardware/pio.h"
+#include "hardware/dma.h"
 
 #include "cartridge.h"
-#include "board.h"
+#include "cartridge-pio.h"
 #include "c64_interface.h"
+
+#include "board.h"
 
 uint8_t crt_buf[CRT_BUFFER_SIZE] = {};
 uint8_t crt_map[64] = {};
 
-#define wait_until(t) { for(int i=0; i<t; i++) asm volatile("nop\n"); } // 3 ns for each nop (@330Mhz)
-
 #define CRT_BANK(bank)          (crt_buf + (uint32_t)(16 * 1024 * bank))
 
-// Fast look-up of 16k ROM bank address   (450 kb)
-uint8_t *crt_banks[29] = {
+// Fast look-up of 16k ROM bank address
+uint8_t *crt_banks[BANKS_NUM] = {
    CRT_BANK(0),
    CRT_BANK(1),
    CRT_BANK(2),
@@ -43,11 +45,9 @@ uint8_t *crt_banks[29] = {
    CRT_BANK(25),
    CRT_BANK(26),
    CRT_BANK(27),
-   CRT_BANK(28)
+   CRT_BANK(28),
+   CRT_BANK(29)
 };
-
-#define CORE1_STACK_SIZE 4096
-static uint32_t core1_stack[CORE1_STACK_SIZE];
 
 typedef struct {
     uint8_t *crt_buf;
@@ -74,64 +74,80 @@ uint8_t run_cart(IDataReader &r) {
    c64_set_exrom_game(crt->getExrom(), crt->getGame());
    printf("CRT size: %ld\n", crt->getSize());
 
-   if(crt->getType() == 0) {
-      // normal cartridge (0)
-      printf("cart: 8K, 16K, Ultimax\n");
+   switch(crt->getType()) {
+
       core1_args_t args;
-      args.crt_buf = crt_buf;
-      multicore_launch_core1_with_stack(run_cart_normal, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 19) {
-      // Magic Desk (19)
-      printf("cart: Magic Desk\n");
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      multicore_launch_core1_with_stack(run_cart_magic_desk, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 5) {
-      // Ocean (5)
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      printf("cart: Ocean\n");
-      multicore_launch_core1_with_stack(run_cart_ocean, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 7) {
-      // Fun Play (7)
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      printf("cart: Fun Play\n");
-      multicore_launch_core1_with_stack(run_cart_fun_play, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 8) {
-      // Super Games (8)
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      printf("cart: Super Games\n");
-      multicore_launch_core1_with_stack(run_cart_super_games, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 32) {
-      // EasyFlash (32)
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      args.crt_map = crt_map;
-      printf("cart: EasyFlash\n");
-      multicore_launch_core1_with_stack(run_cart_easyflash, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 17) {
-      // Dinamic (17)
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      printf("cart: Dinamic\n");
-      multicore_launch_core1_with_stack(run_cart_dinamic, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   } else if(crt->getType() == 18) {
-      // Zaxxon (18)
-      core1_args_t args;
-      args.crt_banks = crt_banks;
-      printf("cart: Zaxxon\n");
-      multicore_launch_core1_with_stack(run_cart_zaxxon, core1_stack, CORE1_STACK_SIZE);
-      multicore_fifo_push_blocking((uint32_t)&args);
-   }
+
+      case 0:
+         // normal cartridge (0)
+         printf("cart: 8K, 16K, Ultimax\n");
+         args.crt_buf = crt_buf;
+         multicore_launch_core1(run_cart_normal);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 5:
+         // Ocean (5)
+         args.crt_banks = crt_banks;
+         printf("cart: Ocean\n");
+         multicore_launch_core1(run_cart_ocean);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 7:
+         // Fun Play (7)
+         args.crt_banks = crt_banks;
+         printf("cart: Fun Play\n");
+         multicore_launch_core1(run_cart_fun_play);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 8:
+         // Super Games (8)
+         args.crt_banks = crt_banks;
+         printf("cart: Super Games\n");
+         multicore_launch_core1(run_cart_super_games);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 17:
+         // Dinamic (17)
+         args.crt_banks = crt_banks;
+         printf("cart: Dinamic\n");
+         multicore_launch_core1(run_cart_dinamic);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 18:
+         // Zaxxon (18)
+         args.crt_banks = crt_banks;
+         printf("cart: Zaxxon\n");
+         multicore_launch_core1(run_cart_zaxxon);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 19:
+         // Magic Desk (19)
+         printf("cart: Magic Desk\n");
+         args.crt_banks = crt_banks;
+         multicore_launch_core1(run_cart_magic_desk);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      case 32:
+         // EasyFlash (32)
+         args.crt_banks = crt_banks;
+         args.crt_map = crt_map;
+         printf("cart: EasyFlash\n");
+         multicore_launch_core1(run_cart_easyflash);
+         multicore_fifo_push_blocking((uint32_t)&args);
+         break;
+
+      default:
+         printf("E: cartridge type %d - not found\n", crt->getType());
+         break;
+
+   } // end switch
 
    printf("done\n");
    return 0;
@@ -158,12 +174,13 @@ void __time_critical_func(run_cart_normal)(void) {
       addr = (control & ADDR_GPIO_MASK);
       COMPILER_BARRIER();
 
+      if ( (control & PHI2_MASK) )
+         SET_DATA_MODE_IN
+
       if( !(control & ROML_MASK) || ( !(control & ROMH_MASK) ) ) {
 
          DATA_OUT(rom[addr & 0x3FFF]);
          SET_DATA_MODE_OUT
-         wait_until(16);
-         SET_DATA_MODE_IN
       }
    } // end loop
 }
@@ -191,13 +208,14 @@ void __time_critical_func(run_cart_magic_desk)(void) {
       addr = (control & ADDR_GPIO_MASK);
       COMPILER_BARRIER();
 
+      if ( (control & PHI2_MASK) )
+         SET_DATA_MODE_IN
+
       if (control & RW_MASK) {
          if( !(control & ROML_MASK) ) {
 
             DATA_OUT(rom_ptr[addr & 0x1FFF]);
             SET_DATA_MODE_OUT
-            wait_until(16);
-            SET_DATA_MODE_IN
          }
 
       } else {
@@ -243,13 +261,14 @@ void __time_critical_func(run_cart_ocean)(void) {
       addr = (control & ADDR_GPIO_MASK);
       COMPILER_BARRIER();
 
+      if ( (control & PHI2_MASK) )
+         SET_DATA_MODE_IN
+
       if (control & RW_MASK) {
          if( !(control & ROML_MASK) || !(control & ROMH_MASK) ) {
 
             DATA_OUT(rom_ptr[addr & 0x3FFF]);
             SET_DATA_MODE_OUT
-            wait_until(16);
-            SET_DATA_MODE_IN
          }
 
       } else {
@@ -285,13 +304,14 @@ void __time_critical_func(run_cart_fun_play)(void) {
       addr = (control & ADDR_GPIO_MASK);
       COMPILER_BARRIER();
 
+      if ( (control & PHI2_MASK) )
+         SET_DATA_MODE_IN
+
       if (control & RW_MASK) {
          if( !(control & ROML_MASK) ) {
 
             DATA_OUT(rom_ptr[addr & 0x3FFF]);
             SET_DATA_MODE_OUT
-            wait_until(16);
-            SET_DATA_MODE_IN
          }
 
       } else {
@@ -334,14 +354,15 @@ void __time_critical_func(run_cart_super_games)(void) {
       addr = (control & ADDR_GPIO_MASK);
       COMPILER_BARRIER();
 
+      if ( (control & PHI2_MASK) )
+         SET_DATA_MODE_IN
+
       if (control & RW_MASK) {
 
          if( !(control & ROML_MASK) || !(control & ROMH_MASK) ) {
 
             DATA_OUT(rom_ptr[addr & 0x3FFF]);
             SET_DATA_MODE_OUT
-            wait_until(16);
-            SET_DATA_MODE_IN
          } 
 
       } else {
@@ -402,19 +423,12 @@ void __time_critical_func(run_cart_easyflash)(void) {
       if (control & RW_MASK) {
 
          if (control & PHI2_MASK) {
-
+         
             if ((control & (ROML_MASK|ROMH_MASK)) != (ROML_MASK|ROMH_MASK)) {
-
-               // value for wait_until: (1 = 3 ns @330MHz)
-               // 12 - 15 safe value for C64
-               // 16 - 20 safe value for C64C
-               //
-               // 12 (36ns) is good for C64 and C64C with check on PHI2
-               // btw Ultimax roms inside EF has issues (like KFF2)
 
                SET_DATA_MODE_OUT
                DATA_OUT(rom_ptr[addr & 0x3FFF]);
-               wait_until(12);
+               wait_until(12); 
                SET_DATA_MODE_IN
 
             } else if ( !(control & IO2_MASK) ) {
@@ -424,10 +438,20 @@ void __time_critical_func(run_cart_easyflash)(void) {
                wait_until(12);
                SET_DATA_MODE_IN
             }
-         }  // end if PHI2_MASK
+
+         } else {
+
+            // Ultimax ROMs inside EF have ROMH low during PHI2 low front
+            if ( ( (mode == 0) || (mode == 4) ) && !(control & ROMH_MASK) ) {
+               SET_DATA_MODE_OUT
+               DATA_OUT(rom_ptr[addr & 0x3FFF]);
+               wait_until(8);
+               SET_DATA_MODE_IN
+            }
+         }
 
       } else {
-         
+        
          data = DATA_IN;
          if( !(control & IO1_MASK) ) {
 
@@ -442,12 +466,11 @@ void __time_critical_func(run_cart_easyflash)(void) {
                   c64_set_exrom_game(ef_control[mode][0], ef_control[mode][1]);
                   break;
             }
-            wait_high(IO1);
-         }
+         } 
 
          if (!(control & IO2_MASK)) {
             ram_buf[addr & 0xff] = data;
-            wait_high(IO2);
+            wait_high(IO2);      // required for C64 compatibility (games: Weird Dreams, ...)
          }
       }
    }  // end loop
@@ -475,20 +498,19 @@ void __time_critical_func(run_cart_dinamic)(void) {
       addr = (control & ADDR_GPIO_MASK);
       COMPILER_BARRIER();
 
-      if( !(control & ROML_MASK) ) {
-
-         DATA_OUT(rom_ptr[addr & 0x1fff]);
-         SET_DATA_MODE_OUT
-         wait_until(16);
+      if ( (control & PHI2_MASK) )
          SET_DATA_MODE_IN
-
-      }  
 
       if( !(control & IO1_MASK) ) {
          rom_ptr = banks[addr & 0xF];
          wait_high(IO1);
       }
 
+      if( !(control & ROML_MASK) ) {
+
+         DATA_OUT(rom_ptr[addr & 0x1fff]);
+         SET_DATA_MODE_OUT
+      }  
    }  // end loop
 }
 
@@ -516,12 +538,12 @@ void __time_critical_func(run_cart_zaxxon)(void) {
 
       if( control & PHI2_MASK) {
 
+         SET_DATA_MODE_IN
+
          if( !(control & ROML_MASK) ) {
 
             DATA_OUT(rom0_ptr[addr & 0x0fff]);
             SET_DATA_MODE_OUT
-            wait_until(16);
-            SET_DATA_MODE_IN
 
             rom_ptr = banks[addr & 0x1000 ? 1 : 0];
 
@@ -529,11 +551,8 @@ void __time_critical_func(run_cart_zaxxon)(void) {
 
             DATA_OUT(rom_ptr[addr & 0x3fff]);
             SET_DATA_MODE_OUT
-            wait_until(16);
-            SET_DATA_MODE_IN
          }
       }
-
    }  // end loop
 }
 

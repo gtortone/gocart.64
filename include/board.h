@@ -33,6 +33,7 @@
 #define SD_CS        37
 #define SD_SPEED     15 * 1000 * 1000
 
+#define DMA          38
 #define LED          39
 
 // I2C pins
@@ -47,13 +48,13 @@
 #define UART_TX      46
 #define UART_BAUDRATE 115200
 
-#define IO1_MASK     ((uint64_t)1 << IO1)
-#define IO2_MASK     ((uint64_t)1 << IO2)
-#define PHI2_MASK    ((uint64_t)1 << PHI2)
-#define ROML_MASK    ((uint64_t)1 << ROML)
-#define ROMH_MASK    ((uint64_t)1 << ROMH)
-#define BA_MASK      ((uint64_t)1 << BA)
-#define RW_MASK      ((uint64_t)1 << RW)
+#define RW_MASK      ((uint32_t)1 << RW)
+#define ROML_MASK    ((uint32_t)1 << ROML)
+#define ROMH_MASK    ((uint32_t)1 << ROMH)
+#define IO1_MASK     ((uint32_t)1 << IO1)
+#define IO2_MASK     ((uint32_t)1 << IO2)
+#define PHI2_MASK    ((uint32_t)1 << PHI2)
+#define BA_MASK      ((uint32_t)1 << BA)
 
 // masks
 #define ADDR_GPIO_MASK     (0xFFFF << PINROMADDR)
@@ -73,7 +74,8 @@
 #define FLASH_AREA_SIZE    1024 * 1024     // 1 MB
 #define FLASH_AREA_OFFSET  PICO_FLASH_SIZE_BYTES - FLASH_AREA_SIZE
 
-#define CRT_BUFFER_SIZE    (450 * 1024)
+#define BANKS_NUM          30
+#define CRT_BUFFER_SIZE    (BANKS_NUM * 16 * 1024)
 
 #define I2C_MAX_PAYLOAD 2100
 #define I2C_RX_BUF_SIZE (I2C_MAX_PAYLOAD * 2)
@@ -82,6 +84,8 @@
 #define SYST_CSR (*(volatile uint32_t*)0xE000E010)
 #define SYST_RVR (*(volatile uint32_t*)0xE000E014)
 #define SYST_CVR (*(volatile uint32_t*)0xE000E018)
+
+#define wait_until(t) { for(int i=0; i<t; i++) asm volatile("nop\n"); } // 3 ns for each nop (@330Mhz)
 
 void board_setup(void);
 void wait_valid_clock(void);

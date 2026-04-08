@@ -46,10 +46,11 @@ set(HEADER_DIR ${CMAKE_SOURCE_DIR}/include)
 
 file(GLOB SOURCES ${SOURCE_DIR}/*.cpp)
 file(GLOB HEADERS ${HEADER_DIR}/*.h)
+file(GLOB PIO ${SOURCE_DIR}/*.pio)
 
 add_executable(${PROJECT} ${SOURCES} ${HEADERS})
 
-#pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/ultimax.pio)
+pico_generate_pio_header(${PROJECT} ${PIO})
 
 target_include_directories(${PROJECT} PRIVATE ${HEADER_DIR})
 

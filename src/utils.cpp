@@ -23,7 +23,7 @@ void trim(char *str) {
 
    str[j] = '\0';
 
-   j--;  // Torniamo all'ultimo carattere valido
+   j--;
    while (j >= 0 && isspace((unsigned char)str[j]))
         str[j--] = '\0';
 }

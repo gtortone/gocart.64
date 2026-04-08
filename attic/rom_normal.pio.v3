@@ -1,0 +1,33 @@
+.program rom_normal
+
+mov pindirs, null    ; set pins as input
+
+.wrap_target
+
+rh_rl_loop:
+   in pins, 19          ; read ROMH, ROML, RW, A15...A0
+
+   mov osr, ~isr
+   out null, 17         ; skip 17 LSB bits - RW, A15...A0
+   mov y, null
+   out y, 2             ; Y = ~ROMH, ~ROML
+
+   jmp !y rh_rl_loop
+
+mov osr, isr
+mov x, null
+out x, 16            ; X = addr
+mov osr, x
+
+push block           ; send address to CPU
+pull block           ; wait data from CPU
+
+out pins, 8
+mov pindirs, ~null   ; set pins as output
+
+wait 1 pin 17        ; wait ROML high
+wait 1 pin 18        ; wait ROMH high
+mov pindirs, null    ; set pins as input
+
+.wrap
+

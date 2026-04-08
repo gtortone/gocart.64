@@ -1,0 +1,49 @@
+.program rom_zaxxon_rl
+
+.wrap_target
+
+rl_loop:
+   in pins, 16             ; read A15...A0
+   jmp pin rl_loop
+
+   mov osr, isr
+   mov x, null
+   out x, 16               ; X = addr
+   mov osr, x
+
+   push block              ; send address to CPU
+   pull block              ; wait data from CPU
+
+   out pins, 8
+   mov pindirs, ~null [31]  ; set pins as output
+
+   mov pindirs, null       ; set pins as input
+
+.wrap
+
+;
+;
+;
+
+.program rom_zaxxon_rh
+
+.wrap_target
+
+rh_loop:
+   in pins, 16             ; read A15...A0
+   jmp pin rh_loop
+
+   mov osr, isr
+   mov x, null
+   out x, 16               ; X = addr
+   mov osr, x
+
+   push block              ; send address to CPU
+   pull block              ; wait data from CPU
+
+   out pins, 8
+   mov pindirs, ~null  [31] ; set pins as output
+
+   mov pindirs, null       ; set pins as input
+
+.wrap

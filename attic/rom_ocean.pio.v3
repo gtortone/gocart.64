@@ -1,0 +1,55 @@
+.program rom_ocean
+
+mov pindirs, null    ; set pins as input
+
+.wrap_target
+
+rh_rl_loop:
+   in pins, 20          ; read IO1, ROMH, ROML, RW, A15...A0
+
+   mov osr, ~isr
+   out null, 17         ; skip 17 LSB bits - RW, A15...A0
+   mov y, null
+   out y, 2             ; Y = ~ROMH, ~ROML
+
+   out x, 1             ; X = IO1
+   jmp !x continue
+
+   irq set 1
+   ;irq wait 1 
+
+   wait 1 pin 19
+   jmp rh_rl_loop
+
+continue:
+   jmp !y rh_rl_loop
+
+push noblock         ; send address to CPU
+pull block           ; wait data from CPU
+
+out pins, 8
+mov pindirs, ~null  [31]  ; set pins as output
+
+;wait 1 pin 17        ; wait ROML high
+;wait 1 pin 18        ; wait ROMH high
+
+mov pindirs, null    ; set pins as input
+
+.wrap
+
+;
+;
+;
+
+.program rom_ocean_bs
+
+.wrap_target
+
+wait irq 1
+
+in pins, 31 
+push
+
+irq clear 1
+
+.wrap

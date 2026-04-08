@@ -1,0 +1,69 @@
+.program rom_easyflash
+
+.wrap_target
+start:
+   jmp pin do_read      ; if RW==1 go read loop
+   jmp start
+
+do_read:
+   ;
+   ; 4 nop required for C64 compatibility
+   ;
+   in pins, 21   [4]    ; read IO2, IO1, ROMH, ROML, RW, A15...A0
+
+   mov osr, ~isr
+   out null, 17         ; skip 17 LSB bits - RW, A15...A0
+
+   mov y, null
+   out y, 2             ; Y = ~ROMH, ~ROML
+   jmp !y start         ; check ~ROMH, ~ROML
+   jmp fetch
+
+   mov x, null
+   out null, 1          ; skip IO1
+   out x, 1
+   jmp !x start         ; check ~IO2
+
+   ; test
+   wait 0 pin 21        ; wait PHI2 low
+   mov isr, null
+   in pins, 21
+   ; test
+
+fetch:
+   push                 ; send address to CPU
+   pull                 ; wait data from CPU
+
+   out pins, 8
+   mov pindirs, ~null [31]  ; set pins as output
+   mov pindirs, null    ; set pins as input
+.wrap
+
+;
+;
+;
+
+.program rom_easyflash_bs           ; IO1
+.wrap_target
+loop:
+   jmp pin loop
+   wait 0 pin 19
+   in pins, 31
+   push
+   ;wait 1 pin 19
+.wrap
+
+;
+;
+;
+
+.program rom_easyflash_write_ram     ; IO2
+.wrap_target
+loop:
+   jmp pin loop
+   wait 0 pin 20        ; wait IO2 low
+   in pins, 31 
+   push 
+   ;wait 1 pin 20
+.wrap
+

@@ -1,0 +1,55 @@
+.program rom_magic
+
+.wrap_target
+
+rl_loop:
+   in pins, 20          ; read IO1, ROMH, ROML, RW, A15...A0
+
+   mov osr, ~isr
+   out null, 17         ; skip 17 LSB bits - RW, A15...A0
+   mov y, null
+   out y, 1             ; Y = ROML
+
+   jmp pin continue
+   irq set 1
+   irq wait 1
+   jmp rl_loop
+
+   mov pindirs, null    ; set pins as input
+   jmp !x continue
+
+continue:
+   jmp !y rl_loop
+
+   mov osr, isr
+   mov x, null
+   out x, 16            ; X = addr
+   mov osr, x
+
+   push block           ; send address to CPU
+   pull block           ; wait data from CPU
+
+   out pins, 8
+   mov pindirs, ~null   ; set pins as output
+
+.wrap
+
+;
+;
+;
+
+.program rom_magic_bs
+
+.wrap_target
+
+wait irq 1
+
+mov pindirs, null    ; set pins as input
+
+in pins, 31 
+mov osr, isr
+push
+
+irq clear 1
+
+.wrap

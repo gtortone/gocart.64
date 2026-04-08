@@ -1,0 +1,60 @@
+.program rom_sgames
+
+mov pindirs, null    ; set pins as input
+
+.wrap_target
+
+start:
+   in pins, 21          ; read IO2, IO1, ROMH, ROML, RW, A15...A0
+
+   mov osr, ~isr
+   out null, 17         ; skip 17 LSB bits - RW, A15...A0
+   mov y, null
+   out y, 2             ; Y = ~ROMH, ~ROML
+
+   jmp pin rh_rl_loop
+
+   out null, 1          ; skip IO1
+   out x, 1             ; X = IO2
+   jmp !x start
+   irq set 1
+   irq wait 1
+   jmp start
+
+rh_rl_loop:
+
+   mov pindirs, null    ; set pins as input
+   jmp !y start
+
+   mov osr, isr
+   mov x, null
+   out x, 16            ; X = addr
+   mov osr, x
+
+   push block           ; send address to CPU
+   pull block           ; wait data from CPU
+
+   out pins, 8
+   mov pindirs, ~null   ; set pins as output
+
+.wrap
+
+;
+;
+;
+
+.program rom_sgames_bs
+
+.wrap_target
+
+wait irq 1
+
+mov pindirs, null    ; set pins as input
+
+in pins, 31 
+mov osr, isr
+push
+
+irq clear 1
+
+.wrap
