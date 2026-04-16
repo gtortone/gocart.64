@@ -22,6 +22,7 @@
 #include "BufferReader.h"
 #include "CRTParser.h"
 #include "commands.h"
+#include "filesystem.h"
 
 #define CMD_BUFFER_SIZE 64
 
@@ -35,10 +36,7 @@ int main(void) {
    c64_reset();
 
    // mount SD
-   FATFS fs;
-   FRESULT fr = f_mount(&fs, "", 1);
-
-   if(fr != FR_OK)
+   if(!filesystem_mount())
       printf("E: SD mount failed\n");
 
    // setup I2C irq handler
@@ -57,7 +55,7 @@ void run_shell(void) {
    uint8_t cmd_index = 0;
    char path[32] = "/";
    char prev_path[64];
-   FRESULT res;
+
    DIR dir;
    FILINFO fno;
 
@@ -148,23 +146,17 @@ void run_shell(void) {
                   run_cart(fr);
             } else if (strcmp(token, "ls") == 0) {
                // list files/directories
-               res = f_opendir(&dir, path);
-               if (res == FR_OK) {
-                  while (1) {
-                     if ( (f_readdir(&dir, &fno) != FR_OK) || (fno.fname[0] == 0) )
-                        break;
-                     if(fno.fattrib & (AM_HID | AM_SYS))
-                        continue;
-                     char *name = *fno.fname ? fno.fname : fno.fname;
-                     if (fno.fattrib & AM_DIR)
-                        printf("[DIR] %s\n", name);
-                     else
-                        printf("[FILE] %s (%llu bytes)\n", name, fno.fsize);
-                  }
-                  f_closedir(&dir);
-               } else {
-                  printf("E: ls error %d\n", res);
+               dir_open(&dir, "*");
+               while(dir_read(&dir, &fno)) {
+                  if(fno.fname[0] == 0)
+                     break;
+                  char *name = *fno.fname ? fno.fname : fno.fname;
+                  if (fno.fattrib & AM_DIR)
+                     printf("[DIR] %s\n", name);
+                  else
+                     printf("[FILE] %s (%llu bytes)\n", name, fno.fsize);
                }
+               dir_close(&dir);
             } else if (strcmp(token, "cd") == 0) {
                token = strtok(NULL, " ");
                strcpy(prev_path, path);
@@ -187,11 +179,10 @@ void run_shell(void) {
                         sprintf(path, "%s/%s", prev_path, token); // relative path
                   }
                }
-               res = f_opendir(&dir, path);
-               if (res != FR_OK) {
+               if(!dir_change(path)) {
                   printf("E: directory %s not found\n", token);
                   strcpy(path, prev_path);
-               } else f_closedir(&dir);
+               }
             } else if (strcmp(token, "info") == 0) {
                extern char __data_start__;
                extern char __data_end__;
