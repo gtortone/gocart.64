@@ -25,12 +25,17 @@ int main(void) {
    i2c_slave_init(i2c0, I2C_ADDR, &i2c_slave_handler);
    i2c_init_regspace();
 
+   sleep_ms(250);
+
    print_prompt(true);
 
+   run_launcher();
+   menu_loop();
+
    while(true) {
-      run_launcher();
-      menu_loop();
-      run_shell();   // keep shell running after menu_loop()
+
+      while(!launcher_running())
+         poll_shell();   // keep shell running after menu_loop()
    }
 
    //run_shell();
