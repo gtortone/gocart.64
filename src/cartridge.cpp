@@ -309,9 +309,7 @@ void __time_critical_func(run_cart_normal)(void) {
 
          DATA_OUT(rom[addr & 0x3FFF]);
          SET_DATA_MODE_OUT
-         if (control & BA_MASK) {
-            wait_until(8);
-         }
+         busy_wait_at_least_cycles(12);      // 4ns * 12 = 48ns
          SET_DATA_MODE_IN
       }
    } // end loop
@@ -565,8 +563,7 @@ void __time_critical_func(run_cart_easyflash)(void) {
          }
 
          if (dout) {
-            asm volatile("nop\n");  // runs for C64 and C64C (!)
-            asm volatile("nop\n");
+            busy_wait_at_least_cycles(2);      // 4ns * 12 = 48ns
             SET_DATA_MODE_IN
             dout = false;
          }
@@ -766,9 +763,7 @@ void __time_critical_func(run_cart_kff)(void) {
 
             SET_DATA_MODE_OUT
             DATA_OUT(rom[addr & 0x3FFF]);
-            if (control & BA_MASK) {
-               wait_until(2);
-            }
+            busy_wait_at_least_cycles(4);      // 4ns * 4 = 16ns
             SET_DATA_MODE_IN
 
          } else if ( !(control & IO1_MASK) ) {
