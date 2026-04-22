@@ -135,7 +135,8 @@ void poll_shell(void) {
             }
          } else if (strcmp(token, "ls") == 0) {
             // list files/directories
-            dir_open(&dir, "*");
+            token = strtok(NULL, " ");
+            dir_open(&dir, token);
             while(dir_read(&dir, &fno)) {
                if(fno.fname[0] == 0)
                   break;

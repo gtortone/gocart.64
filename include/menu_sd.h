@@ -42,8 +42,6 @@ typedef struct {
    char search[SEARCH_LENGTH+2];
 } SD_STATE;
 
-static SD_STATE sd_state;
-
 void sd_format_size(char *buffer, uint32_t size);
 void sd_format_element(char *buffer, FILINFO *info);
 void sd_send_not_found(SD_STATE *state);

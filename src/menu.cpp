@@ -28,6 +28,7 @@
 //
 const MENU *menu;
 CFG_FILE cfg_file;
+extern SD_STATE sd_state;
 extern uint8_t kff_ram[256];
 //
 

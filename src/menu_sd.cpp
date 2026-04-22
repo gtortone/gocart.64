@@ -30,6 +30,7 @@
 #include "cartridge.h"
 
 //
+SD_STATE sd_state;
 extern CFG_FILE cfg_file;
 //
 
@@ -128,6 +129,8 @@ void sd_dir_open(SD_STATE *state) {
       state->search[search_len] = '*';
       state->search[search_len + 1] = 0;
    }
+
+   printf("dir_open: search %s\n", state->search);
 
    if (!dir_open(&state->start_page, state->search))
       fail_to_read_sd();
