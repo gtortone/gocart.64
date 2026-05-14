@@ -19,7 +19,7 @@
 #define ERR_INDEX    0x06  // index out of range
 #define ERR_NPARAMS  0x07  // number of params not enough
 
-#define MAX_REGISTERS_NUM 255
+#define MAX_REGISTERS_NUM 64
 
 static uint8_t rxbuf[I2C_RX_BUF_SIZE];
 static uint8_t txbuf[I2C_TX_BUF_SIZE];
@@ -143,8 +143,8 @@ int handle_command(uint8_t cmd, uint8_t *data, uint16_t len, uint8_t *resp, int 
          return 0;
 
       case 0x70: // set led
-         if(len >= 1)
-            gpio_put(LED, data[0]);
+         //if(len >= 1)
+         //   gpio_put(LED, data[0]);
          return 0;
       
       default:

@@ -21,6 +21,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 # Debug
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
+option(DEBUG "Enable debug prints on UART" OFF)
+
 # Initialize the SDK
 pico_sdk_init()
 
@@ -51,13 +53,20 @@ file(GLOB PIO ${SOURCE_DIR}/*.pio)
 
 add_executable(${PROJECT} ${SOURCES} ${HEADERS})
 
+if(DEBUG)
+   add_compile_definitions(DEBUG)
+   target_link_libraries(${PROJECT} pico_stdio_uart)
+   # enable uart output
+   pico_enable_stdio_usb(${PROJECT} 1)
+   pico_enable_stdio_uart(${PROJECT} 1)
+endif()
+
 pico_generate_pio_header(${PROJECT} ${PIO})
 
 target_include_directories(${PROJECT} PRIVATE ${HEADER_DIR})
 
 target_link_libraries(${PROJECT}
    pico_stdlib 
-   pico_stdio_uart
    pico_multicore
    pico_i2c_slave
    hardware_i2c
@@ -69,10 +78,6 @@ target_link_libraries(${PROJECT}
 target_link_options(${PROJECT_NAME} PRIVATE
     -Wl,--print-memory-usage
 )
-
-# enable uart output
-pico_enable_stdio_usb(${PROJECT} 0)
-pico_enable_stdio_uart(${PROJECT} 1)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(${PROJECT})

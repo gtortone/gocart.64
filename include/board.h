@@ -4,59 +4,56 @@
 #include "hardware/structs/sio.h"
 #include <hardware/i2c.h>
 
-// ADDR GPIO pins       :     GP0 - GP15
-#define PINROMADDR    0
+#define PINROMADDR   GC_ADDR0_PIN
 #define ADDRWIDTH    16
 
 // CONTROL pins
-#define RW           16
-#define ROML         17
-#define ROMH         18
-#define IO1          19
-#define IO2          20
-#define PHI2         21
-#define BA           22
+#define RW           GC_RW_PIN
+#define ROML         GC_ROML_PIN
+#define ROMH         GC_ROMH_PIN
+#define IO1          GC_IO1_PIN
+#define IO2          GC_IO2_PIN
+#define PHI2         GC_PHI2_PIN
+#define BA           GC_BA_PIN
 
-// DATA GPIO pins       :     GP23 - GP30
-#define PINROMDATA   23 
-#define DATAWIDTH     8
+#define PINROMDATA   GC_DATA0_PIN
+#define DATAWIDTH    8
 
-#define NMI          31
-#define IRQ          32
-#define RESET        33    // inverted logic
+#define NMI          GC_NMI_PIN
+#define IRQ          GC_IRQ_PIN
+#define RESET        GC_RESET_PIN
+#define DMA          GC_DMA_PIN
+#define GAME         GC_GAME_PIN
+#define EXROM        GC_EXROM_PIN
 
 // SD pins
-#define SD_SPI_PORT  spi0
-#define SD_SCK       34
-#define SD_MOSI      35
-#define SD_MISO      36
-#define SD_CS        37
+#define SD_SPI_PORT  spi_get_instance(GC_SD_SPI)
+#define SD_SCK       GC_SD_SPI_SCK_PIN
+#define SD_MOSI      GC_SD_SPI_TX_PIN
+#define SD_MISO      GC_SD_SPI_RX_PIN
+#define SD_CS        GC_SD_SPI_CSN_PIN
 #define SD_SPEED     15 * 1000 * 1000
 
-#define DMA          38
-#define LED          39
-
 // I2C pins
-#define I2C_PORT     i2c0
+#define I2C_PORT     i2c_get_instance(GC_EXT_I2C)
 #define I2C_ADDR     0x50
-#define I2C_SDA      40
-#define I2C_SCL      41
+#define I2C_SDA      GC_EXT_I2C_SDA_PIN 
+#define I2C_SCL      GC_EXT_I2C_SCL_PIN
 #define I2C_BAUDRATE 400000
 
 // SPI pins
-#define SPI_PORT     spi1
-#define SPI_MISO     40
-#define SPI_CS       41
-#define SPI_CLK      42
-#define SPI_MOSI     43
+#define SPI_PORT     spi_get_instance(GC_EXT_SPI)
+#define SPI_MISO     GC_EXT_SPI_RX_PIN
+#define SPI_CS       GC_EXT_SPI_CSN_PIN
+#define SPI_CLK      GC_EXT_SPI_SCK_PIN
+#define SPI_MOSI     GC_EXT_SPI_TX_PIN
 
-#define GAME         44    // inverted logic
-#define EXROM        45    // inverted logic
-
-#define UART_ID      uart0
-#define UART_TX      46
-#define UART_RX      47
-#define UART_BAUDRATE 115200
+#ifdef DEBUG
+   #define UART_ID   uart_get_instance(GC_DBG_UART_ID)
+   #define UART_TX   GC_DBG_UART_TX_PIN 
+   #define UART_RX   GC_DBG_UART_RX_PIN 
+   #define UART_BAUDRATE 115200
+#endif
 
 #define RW_MASK      ((uint32_t)1 << RW)
 #define ROML_MASK    ((uint32_t)1 << ROML)
@@ -84,7 +81,7 @@
 #define FLASH_AREA_SIZE    1024 * 1024     // 1 MB
 #define FLASH_AREA_OFFSET  PICO_FLASH_SIZE_BYTES - FLASH_AREA_SIZE
 
-#define I2C_MAX_PAYLOAD 2100
+#define I2C_MAX_PAYLOAD 1000
 #define I2C_RX_BUF_SIZE (I2C_MAX_PAYLOAD * 2)
 #define I2C_TX_BUF_SIZE (I2C_MAX_PAYLOAD * 2)
 
@@ -97,8 +94,5 @@
 void board_setup(void);
 void wait_valid_clock(void);
 void sync_with_vic(void);
-
-void set_led_on(void);
-void set_led_off(void);
 
 #endif

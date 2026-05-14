@@ -47,8 +47,10 @@ void menu_loop(void) {
       uint8_t reply;
       while (!c64_get_reply(cmd, &reply)) {
       
+#ifdef DEBUG
          // keep shell alive
          poll_shell();
+#endif
 
          /*
          if (usb_gotc()) {

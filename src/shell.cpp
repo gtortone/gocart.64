@@ -14,8 +14,9 @@
 #include "menu.h"
 
 #define CMD_BUFFER_SIZE    128
+#define PATH_BUFFER_SIZE   128
 
-static char path[32];
+static char path[PATH_BUFFER_SIZE];
 
 int cmp_filename(const void *a, const void *b) {
    const FILINFO *fa = (FILINFO *)a;
@@ -38,7 +39,7 @@ void print_prompt(bool init=false) {
    if(init)
       printf("\n\n-- GOCart.64 shell --\n\n");
 
-   dir_current(path, 32);
+   dir_current(path, PATH_BUFFER_SIZE);
    printf("%s:> ", path);
 
 }
@@ -47,26 +48,26 @@ void poll_shell(void) {
 
    static char cmd_buffer[CMD_BUFFER_SIZE];
    static uint8_t cmd_index = 0;
-   static char prev_path[64];
+   static char prev_path[PATH_BUFFER_SIZE];
 
    static DIR dir;
    static FILINFO fno;
+   int c;
 
-   if (uart_is_readable(UART_ID)) {
-      char c = uart_getc(UART_ID);
+   if ((c = getchar_timeout_us(0)) != PICO_ERROR_TIMEOUT) {
 
       if (c == '\r') {     // cr + lf
-         uart_putc(UART_ID, c);
-         uart_putc(UART_ID, '\n');
+         putchar(c);
+         putchar('\n');
       } else if (c == '\b') {   // backspace or del
          if (cmd_index > 0) {
             cmd_index--;
-            uart_putc(UART_ID, '\b');
-            uart_putc(UART_ID, ' ');
-            uart_putc(UART_ID, '\b');
+            putchar('\b');
+            putchar(' ');
+            putchar('\b');
          } 
-         return;     //
-      } else uart_putc(UART_ID, c);    // echo
+         return;
+      } else putchar(c);      // echo
                                        
       // process command
       if (c == '\r' || c == '\n') {

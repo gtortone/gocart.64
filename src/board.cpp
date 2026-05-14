@@ -9,6 +9,7 @@
 #include "hardware/structs/xip_ctrl.h"
 
 #include "board.h"
+#include "debug.h"
 
 void sync_with_vic(void) {
    // wait until the raster beam is in the upper or lower border (if VIC-II is enabled)
@@ -28,10 +29,15 @@ void board_setup(void) {
    //sleep_ms(300);
    //set_sys_clock_khz(330000, true);
 
-   gpio_set_function(UART_TX, UART_FUNCSEL_NUM(UART_ID, UART_TX));
-   gpio_set_function(UART_RX, UART_FUNCSEL_NUM(UART_ID, UART_RX));
-   uart_init(UART_ID, UART_BAUDRATE);
-   stdio_uart_init_full(UART_ID, 115200, UART_TX, UART_RX);
+#ifdef DEBUG
+   #ifdef PICO_UART_CONSOLE
+      gpio_set_function(UART_TX, UART_FUNCSEL_NUM(UART_ID, UART_TX));
+      gpio_set_function(UART_RX, UART_FUNCSEL_NUM(UART_ID, UART_RX));
+      stdio_uart_init_full(UART_ID, 115200, UART_TX, UART_RX);
+   #endif
+   stdio_init_all();
+   sleep_ms(500);
+#endif
 
    // configure PSRAM
    //gpio_set_function(PSRAM_CS, GPIO_FUNC_XIP_CS1); // CS for PSRAM
@@ -79,9 +85,6 @@ void board_setup(void) {
    //gpio_set_dir(NMI, GPIO_OUT);
    //gpio_put(NMI, 1);
 
-   gpio_init(LED);
-   gpio_set_dir(LED, GPIO_OUT);
-
    gpio_init(EXROM);
    gpio_disable_pulls(EXROM);
    gpio_set_dir(EXROM, GPIO_OUT);
@@ -102,22 +105,12 @@ void board_setup(void) {
 
    for(int i=PINROMADDR; i<ADDRWIDTH; i++) {
       gpio_disable_pulls(PINROMADDR+i);
-      //gpio_set_slew_rate(PINROMADDR+i, GPIO_SLEW_RATE_FAST);
    }
 
    for(int i=PINROMDATA; i<DATAWIDTH; i++) {
       gpio_disable_pulls(PINROMDATA+i);
-      //gpio_set_slew_rate(PINROMDATA+i, GPIO_SLEW_RATE_FAST);
    }
 
    // set DATA lines (D0...D7) as input
    SET_DATA_MODE_IN
-}
-
-void set_led_on(void) {
-   gpio_put(LED, 1);
-}
-
-void set_led_off(void) {
-   gpio_put(LED, 0);
 }

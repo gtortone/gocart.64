@@ -29,16 +29,20 @@ int main(void) {
 
    sleep_ms(500);
 
+#ifdef DEBUG
    print_prompt(true);
+#endif
 
    run_launcher();
    menu_loop();
 
+#ifdef DEBUG
    while(true) {
 
       while(!launcher_running())
          poll_shell();   // keep shell running after menu_loop()
    }
+#endif
 
    //run_shell();
 
