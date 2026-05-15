@@ -5,7 +5,7 @@
 #include "hw_config.h"
 
 static spi_t spi = {
-      .hw_inst = spi0,
+      .hw_inst = SPI_INSTANCE(GC_SD_SPI),
       .miso_gpio = SD_MISO,
       .mosi_gpio = SD_MOSI,
       .sck_gpio = SD_SCK,
